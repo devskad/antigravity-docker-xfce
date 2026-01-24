@@ -21,8 +21,10 @@ ENV PATH="/usr/local:${PATH}"
 # Install nvm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | NVM_DIR=/usr/local bash
 
-# Install bun
+# Install bun -- note that 'bun install' commands [stubbornly] install into ~/.bun, eg. /config/.bun on this webtop
 RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash
+ENV PATH="/config/.bun/bin:/root/.bun/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
+RUN echo 'export PATH="/config/.bun/bin:/usr/local/bin:${PATH}"' >> /config/.bashrc
 
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local sh
@@ -46,11 +48,6 @@ RUN apt-get update
 
 # Install gemini-cli -- note, this requires google's GPG key per above
 RUN bun install -g @google/gemini-cli
-# Switch to abc and fix their PATH
-# USER abc
-ENV PATH="/config/.bun/bin:/root/.bun/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
-RUN echo 'export PATH="/config/.bun/bin:/usr/local/bin:${PATH}"' >> /config/.bashrc
-# USER root
 
 # Install the antigravity package
 RUN apt-get install -y antigravity
