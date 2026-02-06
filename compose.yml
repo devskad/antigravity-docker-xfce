@@ -23,9 +23,12 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=all
       - IDLE_CHECK_INTERVAL=${IDLE_CHECK_INTERVAL:-30}
       - IDLE_TIMEOUT=${IDLE_TIMEOUT:-60}
-    runtime: nvidia
+    # runtime: nvidia
+    # Shared memory for better performance
+    shm_size: '2gb'
     ports:
       - 3000:3000 # The desktop UI port
     volumes:
-      - ./config:/config # Persists your Antigravity settings/code
+      - ./config:/home/abc/config
+      - ./projects:/home/abc/projects # Persists your Antigravity settings/code
     restart: unless-stopped
