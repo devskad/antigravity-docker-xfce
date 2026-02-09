@@ -1,5 +1,5 @@
 ---
-description: description: "Implement a feature based on a provided spec directory."
+description: Implement a feature based on a provided spec directory.
 ---
 
 1. **Identify Spec Directory**:

@@ -23,9 +23,10 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=all
       - IDLE_CHECK_INTERVAL=${IDLE_CHECK_INTERVAL:-30}
       - IDLE_TIMEOUT=${IDLE_TIMEOUT:-60}
+      - SELKIES_DESKTOP_LOCKED=false
     # runtime: nvidia
     # Shared memory for better performance
-    shm_size: '2gb'
+    shm_size: '4gb'
     ports:
       - 3000:3000 # The desktop UI port
     volumes:
