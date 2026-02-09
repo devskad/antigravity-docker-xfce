@@ -22,19 +22,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# # Add NVIDIA package repository
-# RUN mkdir -p /etc/apt/apt.conf.d && \
-#     echo 'APT::Key::gpgvcommand "/usr/bin/gpgv";' > /etc/apt/apt.conf.d/99-force-gpgv && \
-#     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
-#     dpkg -i cuda-keyring_1.1-1_all.deb && \
-#     apt-get update
-
-# # Install CUDA Toolkit
-# RUN apt-get update && \
-#     apt-get install -y openjdk-21-jre-headless openjdk-21-jre && \
-#     apt-get install -y cuda-toolkit-13-1 && \
-#     rm -rf /var/lib/apt/lists/* 
-
 #=======================================================================
 # Install apps
 #-----------------------------------------------------------------------
