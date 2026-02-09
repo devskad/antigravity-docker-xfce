@@ -10,8 +10,9 @@ ARG USER=abc
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Update and install basic transport tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
+    wget \
     bash \
     gpg \
     apt-transport-https \
@@ -22,13 +23,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # # Add NVIDIA package repository
-# RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb && \
-#   sudo dpkg -i cuda-keyring_1.1-1_all.deb && \
-#   sudo apt-get update
-# # Install only runtime libraries (example for CUDA 12.3)
-# RUN sudo apt install -y cuda-cudart-12-3 libcublas-12-3 libcusparse-12-3 \
-    # && rm -rf /var/lib/apt/lists/*
-# ENV LD_LIBRARY_PATH=/usr/local/cuda-12.3/lib64:$LD_LIBRARY_PATH
+# RUN mkdir -p /etc/apt/apt.conf.d && \
+#     echo 'APT::Key::gpgvcommand "/usr/bin/gpgv";' > /etc/apt/apt.conf.d/99-force-gpgv && \
+#     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
+#     dpkg -i cuda-keyring_1.1-1_all.deb && \
+#     apt-get update
+
+# # Install CUDA Toolkit
+# RUN apt-get update && \
+#     apt-get install -y openjdk-21-jre-headless openjdk-21-jre && \
+#     apt-get install -y cuda-toolkit-13-1 && \
+#     rm -rf /var/lib/apt/lists/* 
 
 #=======================================================================
 # Install apps
