@@ -3,6 +3,7 @@ services:
     build: .
     container_name: antigravity-sandbox
     privileged: true # Required for certain agent system actions
+    shm_size: "8gb"
     environment:
       - PUID=1000
       - PGID=1000
@@ -11,4 +12,5 @@ services:
       - 3000:3000 # The desktop UI port
     volumes:
       - ./config:/config # Persists your Antigravity settings/code
+      - ./projects:/config/Desktop/Projects
     restart: unless-stopped
