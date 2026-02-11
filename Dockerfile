@@ -1,7 +1,10 @@
-FROM lscr.io/linuxserver/webtop:debian-xfce
+FROM lscr.io/linuxserver/webtop:debian-kde
 
 # Default preinstalled webtop user is abc
 ARG USER=abc
+
+# Env vars
+# ENV PIXELFLUX_WAYLAND true
 
 #=======================================================================
 # Install linux packages, drivers & libraries
