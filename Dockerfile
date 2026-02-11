@@ -3,8 +3,8 @@ FROM lscr.io/linuxserver/webtop:debian-kde
 # Default preinstalled webtop user is abc
 ARG USER=abc
 
-# Env vars
-# ENV PIXELFLUX_WAYLAND true
+# Env vars -- reference https://docs.linuxserver.io/images/docker-webtop/#optional-environment-variables for webtop vars
+# ENV PIXELFLUX_WAYLAND=true
 
 #=======================================================================
 # Install linux packages, drivers & libraries
@@ -16,7 +16,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     wget \
-    bash \
     gpg \
     apt-transport-https \
     ca-certificates \
@@ -31,7 +30,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 # Install 'uv' and 'specify-cli'
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     /config/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git && \
-    /config/.local/bin/specify --help 
+    /config/.local/bin/specify --help
 # Get uv into PATH
 ENV PATH="/config/.local/bin:$PATH"
 
@@ -59,11 +58,14 @@ RUN mkdir -p /custom-cont-init.d
 COPY set-gemini-perms.sh /custom-cont-init.d
 RUN chmod +x /custom-cont-init.d/set-gemini-perms.sh
 
-# Add additional setup scripts
-COPY add-desktop-icons.sh /custom-cont-init.d
-RUN chmod +x /custom-cont-init.d/add-desktop-icons.sh
-
-
+# # Add additional setup scripts
+# COPY add-desktop-icons.sh /custom-cont-init.d <--- for xfce
+# RUN chmod +x /custom-cont-init.d/add-desktop-icons.sh <--- for xfce
+RUN mkdir -p /config/Desktop && chown abc: /config/Desktop
+RUN ln -s /usr/share/applications/chromium.desktop /config/Desktop/chromium.desktop
+RUN ln -s /usr/share/applications/org.kde.konsole.desktop /config/Desktop/org.kde.konsole.desktop
+RUN ln -s /usr/share/applications/antigravity.desktop /config/Desktop/antigravity.desktop
+ 
 #=======================================================================
 # Do user-specific actions
 #-----------------------------------------------------------------------
@@ -79,10 +81,10 @@ COPY antigravity-settings.json /home/$USER/.config/Antigravity/User/settings.jso
 RUN mkdir -p /home/$USER/.config/Code/User
 COPY vscode-settings.json /home/$USER/.config/Code/User/settings.json
 
-# Reconfigure our desktop
-RUN mkdir -p /home/$USER/.config/xfce4/xfconf/xfce-perchannel-xml
-COPY xfce4-panel.xml /config/xfce4-panel.xml
-COPY xfce4-panel.xml /opt/defaults/xfce4-panel.xml
+# # Reconfigure our desktop <--- for xfce
+# RUN mkdir -p /home/$USER/.config/xfce4/xfconf/xfce-perchannel-xml
+# COPY xfce4-panel.xml /config/xfce4-panel.xml
+# COPY xfce4-panel.xml /opt/defaults/xfce4-panel.xml
 
 #=======================================================================
 # Windup

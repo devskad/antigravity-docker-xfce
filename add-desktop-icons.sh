@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Add Desktop icons
-for f in /usr/share/applications/antigravity.desktop \
+# Add Desktop icons -- only for xfce
+for f in /usr/share/applications/chromium.desktop \
     /usr/share/applications/xfce4-terminal.desktop
 do
     cp $f /config/Desktop
