@@ -1,44 +1,34 @@
+FROM ghcr.io/astral-sh/uv:latest AS uv_bin
 FROM lscr.io/linuxserver/webtop:debian-kde
 
 # Default preinstalled webtop user is abc
 ARG USER=abc
 
-# Env vars -- reference https://docs.linuxserver.io/images/docker-webtop/#optional-environment-variables for webtop vars
+#=======================================================================
+# Environment Variables
+#-----------------------------------------------------------------------
+# Webtop env vars -- reference https://docs.linuxserver.io/images/docker-webtop/#optional-environment-variables
 # ENV PIXELFLUX_WAYLAND=true
 
-#=======================================================================
-# Install linux packages, drivers & libraries
-#-----------------------------------------------------------------------
-# Switch to root to handle installations
-ARG DEBIAN_FRONTEND=noninteractive
+# Set the environment to allow Fuse (needed for AppImages/containers)
+ENV APPIMAGE_EXTRACT_AND_RUN=1
 
-# Update and install basic transport tools
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
-    curl \
-    wget \
-    gpg \
-    apt-transport-https \
-    ca-certificates \
-    git \
-    nodejs \
-    python3 python3-pip \
-    && rm -rf /var/lib/apt/lists/*
 
 #=======================================================================
-# Install apps
+# Install global software
 #-----------------------------------------------------------------------
-# Install 'uv' and 'specify-cli'
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    /config/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git && \
+USER root
+# Install KDE indexers
+RUN apt-get update && \
+    apt-get install -y nodejs desktop-file-utils shared-mime-info && \
+    apt-get clean
+# Add install tools
+COPY --from=uv_bin /uv /uvx /usr/local/bin/
+RUN npm install -g @google/gemini-cli
+RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git && \
     /config/.local/bin/specify --help
-# Get uv into PATH
-ENV PATH="/config/.local/bin:$PATH"
 
-# Install 'gemini-cli'
-RUN npm install -g @google/gemini-cli && \
-    /usr/bin/gemini --help
-
-# Install the antigravity package
+# Install antigravity
 #   Add the Antigravity repository to sources.list.d
 RUN mkdir -p /etc/apt/keyrings
 #   Add Google's official GPG key and the Antigravity repo
@@ -50,28 +40,34 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-
 RUN apt update && apt install antigravity \
     && rm -rf /var/lib/apt/lists/*
 
-# Add speckit/Antigravity bridge global workspace rule
-RUN mkdir -p /config/.gemini/antigravity/global_workflows
-COPY speckit-implement.md /config/.gemini/antigravity/global_workflows/speckit-implement.md
+#=======================================================================
+# Configure post-KDE build pre-KDE run permissions updates
+#-----------------------------------------------------------------------
 # RUN chown -R abc /config/.gemini && chgrp -R abc /config/.gemini <--- don't do this as init.d will override it....
 RUN mkdir -p /custom-cont-init.d
 COPY set-gemini-perms.sh /custom-cont-init.d
 RUN chmod +x /custom-cont-init.d/set-gemini-perms.sh
 
-# # Add additional setup scripts
-# COPY add-desktop-icons.sh /custom-cont-init.d <--- for xfce
-# RUN chmod +x /custom-cont-init.d/add-desktop-icons.sh <--- for xfce
+#=======================================================================
+# Configure speckit/Antigravity bridge global workspace rule
+#-----------------------------------------------------------------------
+RUN mkdir -p /config/.gemini/antigravity/global_workflows
+COPY speckit-implement.md /config/.gemini/antigravity/global_workflows/speckit-implement.md
+
+#=======================================================================
+# Add desktop icon links
+#-----------------------------------------------------------------------
 RUN mkdir -p /config/Desktop && chown abc: /config/Desktop
 RUN ln -s /usr/share/applications/chromium.desktop /config/Desktop/chromium.desktop
 RUN ln -s /usr/share/applications/org.kde.konsole.desktop /config/Desktop/org.kde.konsole.desktop
 RUN ln -s /usr/share/applications/antigravity.desktop /config/Desktop/antigravity.desktop
- 
+
 #=======================================================================
-# Do user-specific actions
+# Do User-specific actions
 #-----------------------------------------------------------------------
 USER $USER
 WORKDIR /home/$USER
-# ENV HOME=/home/$USER <--- Don't try this or webtop will not start....
+# ENV HOME=/home/$USER <--- WARNING! Do not do this or webtop will not start....
 
 # Disable Antigravity telemetry by creating user settings file
 RUN mkdir -p /home/$USER/.config/Antigravity/User
@@ -81,16 +77,58 @@ COPY antigravity-settings.json /home/$USER/.config/Antigravity/User/settings.jso
 RUN mkdir -p /home/$USER/.config/Code/User
 COPY vscode-settings.json /home/$USER/.config/Code/User/settings.json
 
-# # Reconfigure our desktop <--- for xfce
-# RUN mkdir -p /home/$USER/.config/xfce4/xfconf/xfce-perchannel-xml
-# COPY xfce4-panel.xml /config/xfce4-panel.xml
-# COPY xfce4-panel.xml /opt/defaults/xfce4-panel.xml
-
 #=======================================================================
 # Windup
 #-----------------------------------------------------------------------
 USER root
+
 # Clean up to keep the image small
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-# Set the environment to allow Fuse (needed for AppImages/containers)
-ENV APPIMAGE_EXTRACT_AND_RUN=1
+
+# THE "FORCE-VISIBLE" MOVE
+#   Move the desktop files to the high-priority local path & trigger a KDE update build
+RUN mkdir -p /usr/local/share/applications && \
+    cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
+    update-desktop-database /usr/local/share/applications
+
+# THE XDG_CONFIG BYPASS
+#   Overwrite the default menu name so the prefix "kf5-" isn't needed.
+RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu
+
+# THE RUNTIME KDE REBUILD (The /config aware version)
+RUN mkdir -p /custom-cont-init.d && \
+    echo '#!/bin/with-contenv bash\n\
+# Force the environment for this script\n\
+export XDG_MENU_PREFIX="kf5-"\n\
+export HOME="/config"\n\
+\n\
+# Rebuild the system-wide desktop cache\n\
+/usr/bin/update-desktop-database /usr/share/applications\n\
+\n\
+# Ensure the /config/.cache exists and is owned by abc\n\
+mkdir -p /config/.cache\n\
+chown -R abc:abc /config/.cache\n\
+\n\
+# Force rebuild the database into the /config mount\n\
+s6-setuidgid abc /usr/bin/kbuildsycoca5 --noincremental\n\
+' > /custom-cont-init.d/99-config-rebuild.sh && \
+    chmod +x /custom-cont-init.d/99-config-rebuild.sh
+
+# THE ROBUST BROWSER REDIRECT
+# We ensure the script is complete and handles the KIO-exec path cleaning
+RUN echo '#!/bin/bash\n\
+# If KIO downloaded the file, we strip the local path and extract the original URL\n\
+CLEAN_URL=$(echo "$1" | sed -E "s|file:///config/.cache/kioexec/krun/[0-9_]*/||")\n\
+# If it starts with "https", we use it; otherwise, we pass the original $1\n\
+/usr/bin/chromium --no-sandbox --ozone-platform=x11 "$CLEAN_URL"' > /usr/local/bin/browser-force && \
+    chmod +x /usr/local/bin/browser-force
+
+# HIJACK XDG-OPEN
+RUN mv /usr/bin/xdg-open /usr/bin/xdg-open.bak || true && \
+    ln -sf /usr/local/bin/browser-force /usr/bin/xdg-open
+
+# THE FINAL MENU AND PATH FIX (No typos this time!)
+RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu && \
+    mkdir -p /usr/local/share/applications && \
+    cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
+    cp /usr/share/applications/chromium.desktop /usr/local/share/applications/
