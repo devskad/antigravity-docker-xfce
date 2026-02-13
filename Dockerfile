@@ -8,7 +8,7 @@ ARG USER=abc
 # Environment Variables
 #-----------------------------------------------------------------------
 # Webtop env vars -- reference https://docs.linuxserver.io/images/docker-webtop/#optional-environment-variables
-# ENV PIXELFLUX_WAYLAND=true
+ENV PIXELFLUX_WAYLAND=true
 
 # Set the environment to allow Fuse (needed for AppImages/containers)
 ENV APPIMAGE_EXTRACT_AND_RUN=1
@@ -85,17 +85,7 @@ USER root
 # Clean up to keep the image small
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# # THE "FORCE-VISIBLE" MOVE
-# #   Move the desktop files to the high-priority local path & trigger a KDE update build
-# RUN mkdir -p /usr/local/share/applications && \
-#     cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
-#     update-desktop-database /usr/local/share/applications
-
-# THE XDG_CONFIG BYPASS
-#   Overwrite the default menu name so the prefix "kf5-" isn't needed.
-# RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu
-
-# THE RUNTIME KDE REBUILD (The /config aware version)
+# RUNTIME REBUILD KDE
 RUN mkdir -p /custom-cont-init.d && \
     echo '#!/bin/with-contenv bash\n\
 # Force the environment for this script\n\
@@ -114,21 +104,14 @@ s6-setuidgid abc /usr/bin/kbuildsycoca5 --noincremental\n\
 ' > /custom-cont-init.d/99-config-rebuild.sh && \
     chmod +x /custom-cont-init.d/99-config-rebuild.sh
 
-# THE ROBUST BROWSER REDIRECT
-# We ensure the script is complete and handles the KIO-exec path cleaning
+# ROBUST BROWSER REDIRECT
+#   Ensure that the script is complete and handles the KIO-exec path cleaning
 RUN echo '#!/bin/bash\n\
 # If KIO downloaded the file, we strip the local path and extract the original URL\n\
 CLEAN_URL=$(echo "$1" | sed -E "s|file:///config/.cache/kioexec/krun/[0-9_]*/||")\n\
 # If it starts with "https", we use it; otherwise, we pass the original $1\n\
 /usr/bin/chromium --no-sandbox --ozone-platform=x11 "$CLEAN_URL"' > /usr/local/bin/browser-force && \
     chmod +x /usr/local/bin/browser-force
-
-# HIJACK XDG-OPEN
+#   HIJACK XDG-OPEN
 RUN mv /usr/bin/xdg-open /usr/bin/xdg-open.bak || true && \
     ln -sf /usr/local/bin/browser-force /usr/bin/xdg-open
-
-# # THE FINAL MENU AND PATH FIX (No typos this time!)
-# RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu && \
-#     mkdir -p /usr/local/share/applications && \
-#     cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
-#     cp /usr/share/applications/chromium.desktop /usr/local/share/applications/
