@@ -85,15 +85,15 @@ USER root
 # Clean up to keep the image small
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# THE "FORCE-VISIBLE" MOVE
-#   Move the desktop files to the high-priority local path & trigger a KDE update build
-RUN mkdir -p /usr/local/share/applications && \
-    cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
-    update-desktop-database /usr/local/share/applications
+# # THE "FORCE-VISIBLE" MOVE
+# #   Move the desktop files to the high-priority local path & trigger a KDE update build
+# RUN mkdir -p /usr/local/share/applications && \
+#     cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
+#     update-desktop-database /usr/local/share/applications
 
 # THE XDG_CONFIG BYPASS
 #   Overwrite the default menu name so the prefix "kf5-" isn't needed.
-RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu
+# RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu
 
 # THE RUNTIME KDE REBUILD (The /config aware version)
 RUN mkdir -p /custom-cont-init.d && \
@@ -127,8 +127,8 @@ CLEAN_URL=$(echo "$1" | sed -E "s|file:///config/.cache/kioexec/krun/[0-9_]*/||"
 RUN mv /usr/bin/xdg-open /usr/bin/xdg-open.bak || true && \
     ln -sf /usr/local/bin/browser-force /usr/bin/xdg-open
 
-# THE FINAL MENU AND PATH FIX (No typos this time!)
-RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu && \
-    mkdir -p /usr/local/share/applications && \
-    cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
-    cp /usr/share/applications/chromium.desktop /usr/local/share/applications/
+# # THE FINAL MENU AND PATH FIX (No typos this time!)
+# RUN ln -sf /etc/xdg/menus/kf5-applications.menu /etc/xdg/menus/applications.menu && \
+#     mkdir -p /usr/local/share/applications && \
+#     cp /usr/share/applications/org.kde.konsole.desktop /usr/local/share/applications/ && \
+#     cp /usr/share/applications/chromium.desktop /usr/local/share/applications/
