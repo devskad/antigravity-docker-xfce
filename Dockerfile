@@ -20,7 +20,7 @@ ENV APPIMAGE_EXTRACT_AND_RUN=1
 USER root
 # Install KDE indexers
 RUN apt-get update && \
-    apt-get install -y nodejs desktop-file-utils shared-mime-info && \
+    apt-get install -y nodejs desktop-file-utils shared-mime-info kwalletmanager libkf5wallet-bin dbus-x11 && \
     apt-get clean
 # Add install tools
 COPY --from=uv_bin /uv /uvx /usr/local/bin/
@@ -61,6 +61,13 @@ RUN mkdir -p /config/Desktop && chown abc: /config/Desktop
 RUN ln -s /usr/share/applications/chromium.desktop /config/Desktop/chromium.desktop
 RUN ln -s /usr/share/applications/org.kde.konsole.desktop /config/Desktop/org.kde.konsole.desktop
 RUN ln -s /usr/share/applications/antigravity.desktop /config/Desktop/antigravity.desktop
+
+# Enable GPG for kwalletmanager
+ENV GPG_TTY=/dev/pts/0
+COPY gpg-params.txt /tmp
+COPY generate-gpg-key.sh /custom-cont-init.d/99-create-gpg-key.sh
+RUN chmod +x /custom-cont-init.d/99-create-gpg-key.sh
+
 
 #=======================================================================
 # Do User-specific actions
