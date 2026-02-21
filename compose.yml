@@ -30,6 +30,6 @@ services:
     ports:
       - 3001:3001 # The https desktop UI port
     volumes:
-      - ./config:/home/abc/config
-      - ./projects:/home/abc/projects # Persists your Antigravity settings/code
+      - ./config:/home/abc/config # Avoid mounting to /config and overriding webtop's /config folder
+      - ./projects:/config/Desktop/projects # Persists your Antigravity settings/code
     restart: unless-stopped
