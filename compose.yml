@@ -28,7 +28,7 @@ services:
     # Shared memory for better performance
     shm_size: '8gb'
     ports:
-      - 3000:3000 # The desktop UI port
+      - 3001:3001 # The https desktop UI port
     volumes:
       - ./config:/home/abc/config
       - ./projects:/home/abc/projects # Persists your Antigravity settings/code
