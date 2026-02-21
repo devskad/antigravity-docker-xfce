@@ -26,7 +26,11 @@ BATCH_FILE="/tmp/gpg-params.txt"
 
     # 4. Execute the generation AS the abc user
     # This ensures all folders and files are owned by abc, not root
+    #   Get the Fingerprint
+    FPR=$(su - $TARGET_USER -c "gpg --list-keys --with-colons" | awk -F: '/^fpr:/ { print $10; exit }')
     su - $TARGET_USER -c "gpg --batch --generate-key $BATCH_FILE"
+    # Update fingerprint in key to make gpg and kwalletmanager work
+    echo -e "5\ny\n" | su - $TARGET_USER -c "gpg --batch --command-fd 0 --edit-key $FPR trust"
 
     # 5. Cleanup the sensitive batch file
     rm "$BATCH_FILE"
