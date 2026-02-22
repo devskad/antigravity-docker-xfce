@@ -10,6 +10,7 @@ description: Implement a feature based on a provided spec directory.
 2. **Read Context**:
    - Use `list_dir` to inspect the `TargetDirectory`.
    - Read all relevant files (Markdown, text, etc.) within that directory to understand the requirements.
+   - If there is repomix-output.xml file, pay special attention to that for context. Just keep in mind that it might not be up to date.
 
 3. **Initialize Task**:
    - Create or update `task.md` by extracting requirements from the files you just read.
