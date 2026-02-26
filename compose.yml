@@ -9,7 +9,7 @@ services:
       - PGID=1000
       - TZ=America/New_York  # This sets the internal clock to EST/EDT
     ports:
-      - 3000:3000 # The desktop UI port
+      - 3711:3711 # The desktop UI port
     volumes:
       - ./config:/config # Persists your Antigravity settings/code
       - ./projects:/config/Desktop/Projects
